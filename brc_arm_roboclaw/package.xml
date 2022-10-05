@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>roboclaw_node</name>
+  <name>brc_arm_roboclaw</name>
   <version>0.0.1</version>
-  <description>Node for roboclaw</description>
+  <description>Package for roboclaw</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

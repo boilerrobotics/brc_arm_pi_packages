@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="run_diag" default="true"/>
+
+    <node if="$(arg run_diag)" pkg="brc_arm_roboclaw" type="brc_arm_roboclaw_code.py" name="brc_arm_roboclaw" output="screen">
+        <rosparam command="load" file="$(find brc_arm_roboclaw)/config/roboclaw_config.yaml"/>
+    </node>
+
+    <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator">
+        <rosparam command="load" file="$(find brc_arm_roboclaw)/config/roboclaw_diag.yaml"/>
+    </node>
+
+</launch>
