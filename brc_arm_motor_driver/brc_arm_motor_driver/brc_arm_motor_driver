@@ -1,0 +1,37 @@
+import rclpy
+from rclpy.node import Node
+
+from brc_arm_msg_srv.msg import Encoders, Joints
+from brc_arm_msg_srv.srv import Homing
+
+
+class brcArmMotorDriver(Node):
+
+    def __init__(self):
+        super().__init__('brc_arm_motor_driver')
+        self.publisher_ = self.create_publisher(Encoders, 'brc_arm', 2)
+        timer_period = 0.5
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0
+
+    def timer_callback(self):
+        msg = Encoders()                                                # CHANGE
+        msg.name = self.i                                           # CHANGE
+        self.publisher_.publish(msg)
+        self.get_logger().info('Publishing: "%d"' % msg.num)       # CHANGE
+        self.i += 1
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    brc_arm_motor_driver = brcArmMotorDriver()
+
+    rclpy.spin(brc_arm_motor_driver)
+
+    brc_arm_motor_driver.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
