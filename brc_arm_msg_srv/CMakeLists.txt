@@ -15,7 +15,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Encoders.msg"
-  "msg/Joints.msg"
+  "msg/Positions.msg"
   "srv/Homing.srv"
 )
 
