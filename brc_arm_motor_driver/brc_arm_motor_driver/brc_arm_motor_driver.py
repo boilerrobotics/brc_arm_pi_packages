@@ -200,7 +200,7 @@ class BrcArmMotorDriver(Node):
 
     def homing(self, request: Homing.Request, response: Homing.Response):
         bits = [
-            (request.home_goal >> bit) & 1 for bit in range(self.joint_num - 1, -1, -1)
+            (request.home_goal >> bit) & 1 for bit in range(len(self.joints) - 1, -1, -1)
         ]
         self.get_logger().info(f"Homing request: {bits}")
         if not self.simulate:
