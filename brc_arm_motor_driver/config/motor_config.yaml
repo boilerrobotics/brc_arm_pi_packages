@@ -1,66 +1,64 @@
 /brc_arm_motor_driver:
   ros__parameters:
     motor_controllers:
-      odrive1:
-        dev: "/dev/ttyACM0"
+      odrive:
+        serial: 128
+      roboclaw:
         baud: 115200
-        address: 128
-        joints: "gantry"
-      roboclaw1:
-        dev: "/dev/ttyACM0"
-        baud: 115200
-        address: 128
-        joints: ["midarm1", "midarm2"]
-      roboclaw2:
-        dev: "/dev/ttyACM1"
-        baud: 115200
-        address: 129
-        joints: ["wrist1", "wrist2"]
-      roboclaw3:
-        dev: "/dev/ttyACM2"
-        baud: 115200
-        address: 130
-        joints: ["EEbase", "RLink1"]
+        identifiers: [128, 129, 130]
 
-    # Must be in order as listed in motor controllers, will be homed in this order as well
+    # Must be in order of homing
     joints:
       gantry:
+        controller: "odrive"
+        motor_num: 1
+        type: "arm"
         reduction: 1863.512284
         speed: [10000, 1000000, 10000]
-        motor_num: 1
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
-        type: "arm"
       midarm1:
-        reduction: 5255.871815
-        speed: [10000, 1000000, 10000]
+        controller: "roboclaw"
+        identifier: 128
         motor_num: 1
-        PIDMM: [1, 1, 1, 1, 0, 0, 100000]
         type: "arm"
-      midarm2:
         reduction: 5255.871815
         speed: [10000, 1000000, 10000]
-        motor_num: 2
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
+      midarm2:
+        controller: "roboclaw"
+        identifier: 128
+        motor_num: 2
         type: "arm"
+        reduction: 5255.871815
+        speed: [10000, 1000000, 10000]
+        PIDMM: [1, 1, 1, 1, 0, 0, 100000]
       wrist1:
+        controller: "roboclaw"
+        identifier: 129
+        motor_num: 1
+        type: "arm"
         reduction: 30273.82166
         speed: [10000, 1000000, 10000]
-        motor_num: 1
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
-        type: "arm"
       wrist2:
+        controller: "roboclaw"
+        identifier: 129
+        motor_num: 2
+        type: "arm"
         reduction: 81.52866242
         speed: [10000, 1000000, 10000]
-        motor_num: 2
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
-        type: "arm"
       EEbase:
+        controller: "roboclaw"
+        identifier: 130
+        motor_num: 1
+        type: "arm"
         reduction: 163.0573248
         speed: [10000, 1000000, 10000]
-        motor_num: 1
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
-        type: "arm"
       RLink1:
-        current_limit: 0.4
+        controller: "roboclaw"
+        identifier: 130
         motor_num: 2
         type: "EE"
+        current_limit: 0.4
