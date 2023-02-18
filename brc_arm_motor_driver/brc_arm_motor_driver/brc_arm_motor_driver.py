@@ -8,6 +8,7 @@ from rclpy.duration import Duration
 from brc_arm_msg_srv.msg import Encoders, Positions
 from brc_arm_msg_srv.srv import Homing
 
+import odrive
 from .roboclaw_3 import Roboclaw
 from .roboclaw_joint import RoboclawJoint
 
@@ -32,6 +33,10 @@ class BrcArmMotorDriver(Node):
         # Run motor controllers at 10 Hz
         self.create_timer(0.1, self.run)
 
+    def find_controllers(self):
+        print("TODO")
+        # odr = odrive.find_any()
+
     def configure_motors(self):
         # Load parameters
         config = os.path.join(
@@ -46,6 +51,7 @@ class BrcArmMotorDriver(Node):
         # Save list of joints
         joint_num = 0  # Change to 0 when including GL
         self.joints = [None] * len(params["joints"])
+        self.controllers = self.find_controllers()
 
         if not self.simulate:
             # Configer motor drivers
@@ -143,6 +149,8 @@ class BrcArmMotorDriver(Node):
             print(f"Joint {idx}: = {goal}")
             if self.simulate:
                 self.joints[idx] = goal
+            else:
+                self.joints[idx].go_to_position(goal)
 
     def pub_encoders(self):
         encoder_msg = Encoders()
@@ -150,6 +158,8 @@ class BrcArmMotorDriver(Node):
             if joint is not None:
                 if self.simulate:
                     encoder_msg.encoder_count[idx] = joint
+                else:
+                    encoder_msg.encoder_count[idx] = self.joints[idx].read_enc()
         self.enc_pub.publish(encoder_msg)
 
     def homing(self, request: Homing.Request, response: Homing.Response):
