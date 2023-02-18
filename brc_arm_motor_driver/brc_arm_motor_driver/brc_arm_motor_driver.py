@@ -154,6 +154,7 @@ class BrcArmMotorDriver(Node):
 
     def pub_encoders(self):
         encoder_msg = Encoders()
+        encoder_msg.encoder_count = [0.0] * len(self.joints)
         for idx, joint in enumerate(self.joints):
             if joint is not None:
                 if self.simulate:
