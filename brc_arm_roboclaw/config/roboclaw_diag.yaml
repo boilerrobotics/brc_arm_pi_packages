@@ -1,6 +1,0 @@
-analyzers:
-  roboclaw:
-    type: GenericAnalyzer
-    path: Roboclaw
-    startswith: 'brc_arm_roboclaw'
-    num_items: 1
