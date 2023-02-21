@@ -1,7 +1,5 @@
 import time
 from rclpy.impl.rcutils_logger import RcutilsLogger
-from brc_arm_msg_srv.msg import Encoders, Positions
-from brc_arm_msg_srv.srv import Homing
 
 from .roboclaw_3 import Roboclaw
 
