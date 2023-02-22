@@ -1,18 +1,15 @@
 import time
 import odrive
-from rclpy.impl.rcutils_logger import RcutilsLogger
 
 class OdriveJoint:
   def __init__(
     self,
     name,
     odr: odrive,
-    logger: RcutilsLogger,
     trajectory_limits
   ):
     self.name = name
     self.odr = odr
-    self.logger = logger 
     self.axis = getattr(odr, "axis1")
     self.configure_trajectory_control(trajectory_limits[0], 
                                       trajectory_limits[1], 
@@ -24,15 +21,16 @@ class OdriveJoint:
   def go_to_position(self, position):
     try: 
       self.axis.controller.input_pos = position
-      self.logger.info(
+      print(
           f"Joint {self.name}:\t command sent, position = {position}"
       )
     except Exception as e: 
       self.stop()
-      self.logger.warn(f"Joint {self.name}: \t function: go_to_position | error: {e}")
-      self.logger.debug(e)
+      print(f"Joint {self.name}: \t function: go_to_position | error: {e}")
+      print(e)
     
-  def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
+  def configure_trajectory_control(
+    self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
     try:
       self.axis.controller.config.input_filter_bandwidth = bandwidth
       self.axis.controller.config.input_mode = InputMode.TRAP_TRAJ
@@ -43,14 +41,14 @@ class OdriveJoint:
       self.axis.controller.config.inertia = inertia
     except Exception as e: 
       self.stop()
-      self.logger.warn(f"Joint {self.name}: \t function: configure_trajectory_control | error: {e}")
-      self.logger.debug(e)
+      print(f"Joint {self.name}: \t function: configure_trajectory_control | error: {e}")
+      print(e)
   
   def home_joint(self):
     start_time = time.monotonic()
     timeout = 10
     rate = 10
-    self.logger.info(f"Homing joint {self.name}")
+    print(f"Homing joint {self.name}")
     try:
       # configure variables for min (pin 1 on the odrive)
       self.odr.config.gpio1_mode = GPIO_MODE_DIGITAL
@@ -70,18 +68,40 @@ class OdriveJoint:
       while self.axis.current_state != HOMING:
         self.axis.requested_state = HOMING
         if start_time - time.monotonic() > timeout:
-          self.logger.warn(
+          print(
             f"Homing joint {self.name} failed, took longer than {timeout}s"
           )
           return self.is_homed
         time.sleep(1 / rate)      
     except Exception as e:
       self.stop()
-      self.logger.warn(f"Joint {self.name}: \t function: home_joint | error: {e}")
+      print(f"Joint {self.name}: \t function: home_joint | error: {e}")
     self.is_homed = self.axis.is_homed
     return self.is_homed
     
   def stop(self): 
     self.axis.requested_state = AXIS_STATE_IDLE
     self.axis.controller.input_vel = 0
-    self.logger.info(f"Joint {self.name}:\t command sent, stop")
+    print(f"Joint {self.name}:\t command sent, stop")
+    
+def main():
+  while True:
+    odr = odrive.find_any()
+    if odr != None:
+      break
+    time.sleep(0.5)
+  odr_joint = OdriveJoint("odrv_arm", odr, [1, 1, 1, 1, 1])
+  while True:
+    x = int(input("Enter a function:\n (0) quit (1) go_to_position(position)\n (2) home_joint()\n (3) stop()"))
+    if x == 1:
+      y = float(input("Enter a position"))
+      odr_joint.go_to_position(y)
+    elif x == 2:
+      odr_joint.home_joint()
+    elif x == 3: 
+      odr_joint.stop()
+    elif x == 0:
+      break
+
+if __name__ == "__main__":
+    main()
