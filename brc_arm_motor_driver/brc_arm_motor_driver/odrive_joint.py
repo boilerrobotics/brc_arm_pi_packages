@@ -52,7 +52,21 @@ class OdriveJoint:
     rate = 10
     self.logger.info(f"Homing joint {self.name}")
     try:
-      self.axis.controller.config.homing_speed = 0.25
+      # configure variables for min (pin 1 on the odrive)
+      self.odr.config.gpio1_mode = GPIO_MODE_DIGITAL
+      self.axis.min_endstop.config.gpio_num = 1
+      self.axis.min_endstop.config.is_active_high = False
+      self.axis.min_endstop.config.offset = 0
+      self.axis.min_endstop.config.enabled = True
+      self.odr.config.gpio1_mode = GPIO_MODE_DIGITAL_PULL_UP
+      #configure variables for max (pin 2 on the odrive)
+      self.odr.config.gpio2_mode = GPIO_MODE_DIGITAL
+      self.axis.max_endstop.config.gpio_num = 2
+      self.axis.max_endstop.config.is_active_high = False
+      self.axis.max_endstop.config.offset = 1
+      self.axis.max_endstop.config.enabled = True
+      self.odr.config.gpio2_mode = GPIO_MODE_DIGITAL_PULL_UP
+      self.odr.save_configuration()
       while self.axis.current_state != HOMING:
         self.axis.requested_state = HOMING
         if start_time - time.monotonic() > timeout:
