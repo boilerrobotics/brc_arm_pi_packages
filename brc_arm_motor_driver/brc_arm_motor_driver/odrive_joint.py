@@ -14,8 +14,6 @@ class OdriveJoint:
     self.odr = odr
     self.logger = logger 
     self.axis = getattr(odr, "axis1")
-    # todo: manually find trajectory limits and set them as 
-    # constants in brc_arm_motor_driver
     self.configure_trajectory_control(trajectory_limits[0], 
                                       trajectory_limits[1], 
                                       trajectory_limits[2], 
