@@ -1,3 +1,4 @@
+import time
 import odrive
 from rclpy.impl.rcutils_logger import RcutilsLogger
 
@@ -18,6 +19,7 @@ class OdriveJoint:
                                       trajectory_limits[2], 
                                       trajectory_limits[3],
                                       trajectory_limits[4])
+    self.is_homed = False
   
   def go_to_position(self, position):
     try: 
@@ -27,7 +29,7 @@ class OdriveJoint:
       )
     except Exception as e: 
       self.stop()
-      self.logger.warn(f"Joint {self.name}: \t function: go_to_position error: {e}")
+      self.logger.warn(f"Joint {self.name}: \t function: go_to_position | error: {e}")
       self.logger.debug(e)
     
   def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
@@ -41,8 +43,29 @@ class OdriveJoint:
       self.axis.controller.config.inertia = inertia
     except Exception as e: 
       self.stop()
-      self.logger.warn(f"Joint {self.name}: \t function: configure_trajectory_control error: {e}")
+      self.logger.warn(f"Joint {self.name}: \t function: configure_trajectory_control | error: {e}")
       self.logger.debug(e)
+  
+  def home_joint(self):
+    start_time = time.monotonic()
+    timeout = 10
+    rate = 10
+    self.logger.info(f"Homing joint {self.name}")
+    try:
+      self.axis.controller.config.homing_speed = 0.25
+      while self.axis.current_state != HOMING:
+        self.axis.requested_state = HOMING
+        if start_time - time.monotonic() > timeout:
+          self.logger.warn(
+            f"Homing joint {self.name} failed, took longer than {timeout}s"
+          )
+          return self.is_homed
+        time.sleep(1 / rate)      
+    except Exception as e:
+      self.stop()
+      self.logger.warn(f"Joint {self.name}: \t function: home_joint | error: {e}")
+    self.is_homed = self.axis.is_homed
+    return self.is_homed
     
   def stop(self): 
     self.axis.requested_state = AXIS_STATE_IDLE
