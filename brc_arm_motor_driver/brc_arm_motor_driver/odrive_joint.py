@@ -1,4 +1,3 @@
-import time
 import odrive
 from rclpy.impl.rcutils_logger import RcutilsLogger
 
@@ -6,7 +5,7 @@ class OdriveJoint:
   def __init__(
     self,
     name,
-    odr: Odrive,
+    odr: odrive,
     logger: RcutilsLogger,
     trajectory_limits
   ):
@@ -21,20 +20,31 @@ class OdriveJoint:
                                       trajectory_limits[4])
   
   def go_to_position(self, position):
-    self.axis.controller.input_pos = position
-    self.logger.info(
-        f"Joint {self.name}:\t command sent, position = {position}"
-    )
+    try: 
+      self.axis.controller.input_pos = position
+      self.logger.info(
+          f"Joint {self.name}:\t command sent, position = {position}"
+      )
+    except Exception as e: 
+      self.stop()
+      self.logger.warn(f"Joint {self.name}: \t function: go_to_position error: {e}")
+      self.logger.debug(e)
     
   def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
-    self.axis.controller.config.input_filter_bandwidth = bandwidth
-    self.axis.controller.config.input_mode = InputMode.TRAP_TRAJ
-    self.odr.controller.config.control_mode = ControlMode.POSITION_CONTROL
-    self.axis.trap_traj.config.vel_limit = vel_limit
-    self.axis.trap_traj.config.accel_limit = accel_limit
-    self.axis.trap_traj.config.decel_limit = decel_limit
-    self.axis.controller.config.inertia = inertia
+    try:
+      self.axis.controller.config.input_filter_bandwidth = bandwidth
+      self.axis.controller.config.input_mode = InputMode.TRAP_TRAJ
+      self.odr.controller.config.control_mode = ControlMode.POSITION_CONTROL
+      self.axis.trap_traj.config.vel_limit = vel_limit
+      self.axis.trap_traj.config.accel_limit = accel_limit
+      self.axis.trap_traj.config.decel_limit = decel_limit
+      self.axis.controller.config.inertia = inertia
+    except Exception as e: 
+      self.stop()
+      self.logger.warn(f"Joint {self.name}: \t function: configure_trajectory_control error: {e}")
+      self.logger.debug(e)
     
   def stop(self): 
+    self.axis.requested_state = AXIS_STATE_IDLE
     self.axis.controller.input_vel = 0
     self.logger.info(f"Joint {self.name}:\t command sent, stop")
