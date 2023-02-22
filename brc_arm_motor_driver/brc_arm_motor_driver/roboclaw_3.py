@@ -1164,7 +1164,7 @@ class Roboclaw:
             self._port.flushInput()
             self._sendcommand(address, self.Cmd.READEEPROM)
             self.crc_update(ee_address)
-            self._port.write(chr(ee_address))
+            self._port.write(ee_address.to_bytes(1, "big"))
             val1 = self._readword()
             if val1[0]:
                 crc = self._readchecksumword()

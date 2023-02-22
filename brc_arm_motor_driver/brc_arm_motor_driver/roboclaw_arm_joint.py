@@ -3,11 +3,10 @@ from rclpy.impl.rcutils_logger import RcutilsLogger
 
 from .roboclaw_3 import Roboclaw
 
-ROBOCLAW_ADDRESS = 128
-
 class RoboclawArmJoint:
     def __init__(
         self,
+        address,
         name,
         roboclaw: Roboclaw,
         motorNum,
@@ -15,6 +14,7 @@ class RoboclawArmJoint:
         speed,
         logger: RcutilsLogger,
     ):
+        self.address = address
         self.name = name
         self.roboclaw = roboclaw
         self.logger = logger
@@ -25,11 +25,11 @@ class RoboclawArmJoint:
         try:
             if self.motorNum == 1:
                 self.roboclaw.SetM1PositionPID(
-                    ROBOCLAW_ADDRESS, pid[1], pid[2], pid[3], pid[4], 0, 0, 100000
+                    self.address, pid[1], pid[2], pid[3], pid[4], 0, 0, 100000
                 )
             elif self.motorNum == 2:
                 self.roboclaw.SetM2PositionPID(
-                    ROBOCLAW_ADDRESS, pid[1], pid[2], pid[3], pid[4], 0, 0, 100000
+                    self.address, pid[1], pid[2], pid[3], pid[4], 0, 0, 100000
                 )
         except OSError as e:
             self.logger.warn(f"Joint {self.name}:\t PID Error: OSError: {e.errno}")
@@ -41,9 +41,9 @@ class RoboclawArmJoint:
 
         try:
             if self.motorNum == 1:
-                status, enc, crc = self.roboclaw.ReadEncM1(ROBOCLAW_ADDRESS)
+                status, enc, crc = self.roboclaw.ReadEncM1(self.address)
             elif self.motorNum == 2:
-                status, enc, crc = self.roboclaw.ReadEncM2(ROBOCLAW_ADDRESS)
+                status, enc, crc = self.roboclaw.ReadEncM2(self.address)
             self.logger.info(f"Joint {self.name}:\t EncM{self.motorNum} Reading: {enc}")
         except ValueError:
             self.logger.warn(f"Joint {self.name}:\t ReadEncM{self.motorNum} ValueError")
@@ -61,9 +61,9 @@ class RoboclawArmJoint:
     def set_enc(self, count):
         try:
             if self.motorNum == 1:
-                self.roboclaw.SetEncM1(ROBOCLAW_ADDRESS, count)
+                self.roboclaw.SetEncM1(self.address, count)
             elif self.motorNum == 2:
-                self.roboclaw.SetEncM2(ROBOCLAW_ADDRESS, count)
+                self.roboclaw.SetEncM2(self.address, count)
             self.logger.info(f"Joint {self.name} encoder set to {count}")
         except OSError as e:
             self.logger.warn(
@@ -80,12 +80,12 @@ class RoboclawArmJoint:
         self.logger.info(f"Homing joint {self.name}")
         try:
             if self.motorNum == 1:
-                self.roboclaw.BackwardM1(ROBOCLAW_ADDRESS, 20)
+                self.roboclaw.BackwardM1(self.address, 20)
                 error_code = 0x400000
             elif self.motorNum == 2:
-                self.roboclaw.BackwardM2(ROBOCLAW_ADDRESS, 20)
+                self.roboclaw.BackwardM2(self.address, 20)
                 error_code = 0x800000
-            while self.roboclaw.ReadError(ROBOCLAW_ADDRESS)[1] != error_code:
+            while self.roboclaw.ReadError(self.address)[1] != error_code:
                 if start_time - time.monotonic() > timeout:
                     self.logger.warn(
                         f"Homing joint {self.name} failed, took longer than {timeout}s"
@@ -103,7 +103,7 @@ class RoboclawArmJoint:
         try:
             if self.motorNum == 1:
                 self.roboclaw.SpeedAccelDeccelPositionM1(
-                    ROBOCLAW_ADDRESS,
+                    self.address,
                     self.speed[0],
                     self.speed[1],
                     self.speed[2],
@@ -112,7 +112,7 @@ class RoboclawArmJoint:
                 )
             elif self.motorNum == 2:
                 self.roboclaw.SpeedAccelDeccelPositionM2(
-                    ROBOCLAW_ADDRESS,
+                    self.address,
                     self.speed[0],
                     self.speed[1],
                     self.speed[2],
@@ -130,6 +130,6 @@ class RoboclawArmJoint:
 
     def stop(self):
         if self.motorNum == 1:
-            self.roboclaw.ForwardM1(ROBOCLAW_ADDRESS, 0)
+            self.roboclaw.ForwardM1(self.address, 0)
         elif self.motorNum == 2:
-            self.roboclaw.ForwardM2(ROBOCLAW_ADDRESS, 0)
+            self.roboclaw.ForwardM2(self.address, 0)

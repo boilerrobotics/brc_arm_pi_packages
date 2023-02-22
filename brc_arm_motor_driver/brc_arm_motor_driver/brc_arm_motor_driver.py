@@ -58,7 +58,7 @@ class BrcArmMotorDriver(Node):
             for joint in params["joints"]:
                 if "roboclaw" in params["joints"][joint]["controller"]:
                     jointType = params["joints"][joint]["type"]
-                    print(f"Joint {joint_num}: {jointType}: {joint}")
+                    self.get_logger().info(f"Joint {joint_num}: {jointType}: {joint}")
                     roboclaw_idx = next(
                         (
                             i
@@ -69,6 +69,7 @@ class BrcArmMotorDriver(Node):
                     )
                     if jointType == "arm":
                         self.joints[joint_num] = RoboclawArmJoint(
+                            address=self.controllers[roboclaw_idx][1],
                             name=joint,
                             roboclaw=self.controllers[roboclaw_idx][0],
                             motorNum=joint["motor_num"],
@@ -82,7 +83,7 @@ class BrcArmMotorDriver(Node):
                 elif "odrive" in params["joints"][joint]["controller"]:
                     print("TODO ODRIVE")
                     jointType = params["joints"][joint]["type"]
-                    print(f"Joint {joint_num}: {jointType}: {joint}")
+                    self.get_logger().info(f"Joint {joint_num}: {jointType}: {joint}")
                     if jointType == "arm":
                         odrive = self.controllers[0][0]
                         # Create odrive object
@@ -92,7 +93,7 @@ class BrcArmMotorDriver(Node):
         else:
             for joint in params["joints"]:
                 jointType = params["joints"][joint]["type"]
-                print(f"Joint {joint_num}: {jointType}: {joint}")
+                self.get_logger().info(f"Joint {joint_num}: {jointType}: {joint}")
                 self.joints[joint_num] = None
                 joint_num += 1
 
@@ -110,8 +111,12 @@ class BrcArmMotorDriver(Node):
             self.get_logger().debug(e)
         # Detect roboclaws
         ports = list(serial.tools.list_ports.comports())
+        if len(ports) < 2: # UPDATE!!!!
+            self.get_logger().fatal("Not enough COM devices detected")
+            self.destroy_node()
+            return
         for p in ports:
-            if "roboclaw" in p.description:
+            if "Roboclaw" in p.description:
                 self.get_logger().info(f"Roboclaw detected at port {p.device}")
                 roboclaw = Roboclaw(
                     p.device, params["motor_controllers"]["roboclaw"]["baud"]
@@ -127,61 +132,46 @@ class BrcArmMotorDriver(Node):
                     self.destroy_node()
                     return
 
-                # Get roboclaw identifier (saved to EEPROM @ 0)
-                # Address is 128 for all since each is on a different serial port
-                try:
-                    self.get_logger().info(
-                        f"Getting EEPROM saved identifier for {p.device}"
-                    )
-                    identifier = roboclaw.ReadEeprom(ROBOCLAW_ADDRESS, 0)[1]
-                except Exception as e:
-                    self.get_logger().fatal(
-                        f"Could not connect to Roboclaw at {p.device}"
-                    )
-                    self.get_logger().debug(e)
+                # Get roboclaw address
+                # Should have more robust duplicate checking and stuff but works good enough
+                address = 0
+                for adr in params["motor_controllers"]["roboclaw"]["identifiers"]:
+                    try:
+                        self.get_logger().info(f"Getting address for {p.device}")
+                        version = roboclaw.ReadVersion(adr)
+                    except AttributeError as e:
+                        self.get_logger().fatal(f"Could not connect to Roboclaw at {adr}")
+                        self.get_logger().debug(e)
+                        self.destroy_node()
+                        return
+                    except Exception as e:
+                        self.get_logger().fatal(type(e).__name__)
+                        self.get_logger().fatal(f"Problem getting roboclaw version at {adr}")
+                        self.get_logger().debug(e)
+                        pass
+                    if not version[0]:
+                        self.get_logger().warn("Could not get version from roboclaw")
+                        address = -1
+                    else:
+                        self.get_logger().info(repr(version[1]))
+                        address = adr
+                        break
+                if address == -1:
+                    self.get_logger().fatal(f"No valid roboclaws found")
                     self.destroy_node()
                     return
-                if (
-                    identifier
-                    not in params["motor_controllers"]["roboclaw"]["identifiers"]
-                ):
-                    self.get_logger().fatal(
-                        f"Robowclaw identifier {identifier} is not valid"
-                    )
-                    self.get_logger().debug(e)
-                    self.destroy_node()
-                    return
-
-                try:
-                    version = roboclaw.ReadVersion(ROBOCLAW_ADDRESS)
-                except AttributeError as e:
-                    self.get_logger().fatal(
-                        "Could not connect to Roboclaw at %d", ROBOCLAW_ADDRESS
-                    )
-                    self.get_logger().debug(e)
-                    self.destroy_node()
-                    return
-                except Exception as e:
-                    self.get_logger().error(type(e).__name__)
-                    self.get_logger().warn("Problem getting roboclaw version")
-                    self.get_logger().debug(e)
-                    pass
-
-                if not version[0]:
-                    self.get_logger().warn("Could not get version from roboclaw")
                 else:
-                    self.get_logger().debug(repr(version[1]))
+                    self.get_logger().info(f"Connected to Roboclaw {address}")
+                    roboclaw.SetPinFunctions(address, 0x00, 0x62, 0x62)
 
-                self.get_logger().info(f"Connected to Roboclaw {identifier}")
-                roboclaw.SetPinFunctions(ROBOCLAW_ADDRESS, 0x00, 0x62, 0x62)
-            self.controllers.append((roboclaw, identifier))
+            self.controllers.append((roboclaw, address))
 
     def run(self):
         self.pub_encoders()
 
     def pos_callback(self, msg: Positions):
         for idx, goal in enumerate(msg.encoder_goal):
-            print(f"Joint {idx}: = {goal}")
+            self.get_logger().info(f"Joint {idx}: = {goal}")
             if self.simulate:
                 self.joints[idx] = goal
             else:
@@ -200,7 +190,8 @@ class BrcArmMotorDriver(Node):
 
     def homing(self, request: Homing.Request, response: Homing.Response):
         bits = [
-            (request.home_goal >> bit) & 1 for bit in range(len(self.joints) - 1, -1, -1)
+            (request.home_goal >> bit) & 1
+            for bit in range(len(self.joints) - 1, -1, -1)
         ]
         self.get_logger().info(f"Homing request: {bits}")
         if not self.simulate:
