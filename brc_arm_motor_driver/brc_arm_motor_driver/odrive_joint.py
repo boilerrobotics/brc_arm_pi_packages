@@ -20,13 +20,14 @@ class OdriveJoint:
   
   def go_to_position(self, position):
     try: 
+      self.odr.controller.config.control_mode = ControlMode.POSITION_CONTROL
       self.axis.controller.input_pos = position
       print(
           f"Joint {self.name}:\t command sent, position = {position}"
       )
     except Exception as e: 
       self.stop()
-      print(f"Joint {self.name}: \t function: go_to_position | error: {e}")
+      print(f"Joint {self.name}:\t function: go_to_position | error: {e}")
       print(e)
     
   def configure_trajectory_control(
@@ -80,6 +81,7 @@ class OdriveJoint:
     return self.is_homed
     
   def stop(self): 
+    self.odr.controller.config.control_mode = ControlMode.VELOCITY_CONTROL
     self.axis.requested_state = AXIS_STATE_IDLE
     self.axis.controller.input_vel = 0
     print(f"Joint {self.name}:\t command sent, stop")
@@ -92,9 +94,9 @@ def main():
     time.sleep(0.5)
   odr_joint = OdriveJoint("odrv_arm", odr, [1, 1, 1, 1, 1])
   while True:
-    x = int(input("Enter a function:\n (0) quit (1) go_to_position(position)\n (2) home_joint()\n (3) stop()"))
+    x = int(input("\nEnter a function:\n (0) quit\n (1) go_to_position(position)\n (2) home_joint()\n (3) stop()\n"))
     if x == 1:
-      y = float(input("Enter a position"))
+      y = float(input("Enter a position\n"))
       odr_joint.go_to_position(y)
     elif x == 2:
       odr_joint.home_joint()
