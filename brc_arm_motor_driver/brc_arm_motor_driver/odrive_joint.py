@@ -82,6 +82,8 @@ class OdriveJoint:
       print(f"Joint {self.name}: \t function: home_joint | error: {e}")
     self.is_homed = self.axis.is_homed
     return self.is_homed
+  
+  def set_enc(self): 
     return True
     
   def stop(self): 
