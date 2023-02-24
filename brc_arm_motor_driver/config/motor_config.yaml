@@ -15,7 +15,7 @@
         type: "arm"
         reduction: 1863.512284
         speed: [10000, 1000000, 10000]
-        PIDMM: [1, 1, 1, 1, 0, 0, 100000]
+        PIDMM: [99, 2, 785, 30, 0, 0, 100000]
       midarm1:
         controller: "roboclaw"
         identifier: 128
@@ -23,7 +23,7 @@
         type: "arm"
         reduction: 5255.871815
         speed: [10000, 1000000, 10000]
-        PIDMM: [1, 1, 1, 1, 0, 0, 100000]
+        PIDMM: [107, 3, 1080, 30, 0, 0, 100000]
       midarm2:
         controller: "roboclaw"
         identifier: 128
@@ -61,4 +61,4 @@
         identifier: 130
         motor_num: 2
         type: "EE"
-        current_limit: 0.4
+        currentLimit: 0.4

@@ -12,6 +12,8 @@ import odrive
 import serial.tools.list_ports
 from .roboclaw_3 import Roboclaw
 from .roboclaw_arm_joint import RoboclawArmJoint
+from .roboclaw_ee_joint import RoboclawEEJoint
+from .odrive_joint import OdriveJoint
 
 ROBOCLAW_ADDRESS = 128
 
@@ -72,21 +74,33 @@ class BrcArmMotorDriver(Node):
                             address=self.controllers[roboclaw_idx][1],
                             name=joint,
                             roboclaw=self.controllers[roboclaw_idx][0],
-                            motorNum=joint["motor_num"],
-                            pid=joint["PIDMM"],
-                            speed=joint["speed"],
+                            motorNum=params["joints"][joint]["motor_num"],
+                            pid=params["joints"][joint]["PIDMM"],
+                            speed=params["joints"][joint]["speed"],
                             logger=self.get_logger(),
                         )
                     elif jointType == "EE":
-                        print("TODO EE")
+                        print("TODO EE JOINT")
+                        self.joints[joint_num] = RoboclawEEJoint(
+                            address=self.controllers[roboclaw_idx][1],
+                            name=joint,
+                            roboclaw=self.controllers[roboclaw_idx][0],
+                            motorNum=params["joints"][joint]["motor_num"],
+                            currentLimit=params["joints"][joint]["currentLimit"],
+                            logger=self.get_logger(),
+                        )
                     joint_num += 1
                 elif "odrive" in params["joints"][joint]["controller"]:
+                    # TODO: odrive joint stuff
                     print("TODO ODRIVE")
                     jointType = params["joints"][joint]["type"]
                     self.get_logger().info(f"Joint {joint_num}: {jointType}: {joint}")
                     if jointType == "arm":
+                        print("TODO ODRIVE JOINT")
                         odrive = self.controllers[0][0]
-                        # Create odrive object
+                        self.joints[joint_num] = OdriveJoint(
+                            name=joint, logger=self.get_logger()
+                        )
                     joint_num += 1
 
         # For simulating/testing
@@ -100,18 +114,21 @@ class BrcArmMotorDriver(Node):
     def find_controllers(self, params):
         # Detect odrives
         try:
-            odr = odrive.find_any(timeout=500)
+            # TODO: fix odrive detection stuff
+            odr = "dummy"
+            # odr = odrive.find_any(timeout=500)
             self.get_logger().info(
-                f"Connected to odrive: {odrive.get_serial_number_str(odr)}"
+                # f"Connected to odrive: {odrive.get_serial_number_str(odr)}"
+                f"Connected to odrive: {odr}"
             )
-            self.controllers.append((odr, -1))
+            self.controllers[0] = (odr, -1)
         except TimeoutError as e:
             self.get_logger().error(type(e).__name__)
             self.get_logger().warn("Failed to detect odrive")
             self.get_logger().debug(e)
         # Detect roboclaws
         ports = list(serial.tools.list_ports.comports())
-        if len(ports) < 2: # UPDATE!!!!
+        if len(ports) < 2:  # UPDATE!!!!
             self.get_logger().fatal("Not enough COM devices detected")
             self.destroy_node()
             return
@@ -137,27 +154,27 @@ class BrcArmMotorDriver(Node):
                 address = 0
                 for adr in params["motor_controllers"]["roboclaw"]["identifiers"]:
                     try:
-                        self.get_logger().info(f"Getting address for {p.device}")
                         version = roboclaw.ReadVersion(adr)
                     except AttributeError as e:
-                        self.get_logger().fatal(f"Could not connect to Roboclaw at {adr}")
+                        self.get_logger().fatal(
+                            f"Could not connect to Roboclaw at {adr}"
+                        )
                         self.get_logger().debug(e)
                         self.destroy_node()
                         return
                     except Exception as e:
                         self.get_logger().fatal(type(e).__name__)
-                        self.get_logger().fatal(f"Problem getting roboclaw version at {adr}")
+                        self.get_logger().fatal(
+                            f"Problem getting roboclaw version at {adr}"
+                        )
                         self.get_logger().debug(e)
                         pass
                     if not version[0]:
-                        self.get_logger().warn("Could not get version from roboclaw")
                         address = -1
                     else:
-                        self.get_logger().info(repr(version[1]))
                         address = adr
                         break
                 if address == -1:
-                    self.get_logger().fatal(f"No valid roboclaws found")
                     self.destroy_node()
                     return
                 else:
@@ -171,11 +188,13 @@ class BrcArmMotorDriver(Node):
 
     def pos_callback(self, msg: Positions):
         for idx, goal in enumerate(msg.encoder_goal):
-            self.get_logger().info(f"Joint {idx}: = {goal}")
-            if self.simulate:
+            # self.get_logger().info(f"Joint {idx}: = {int(goal)}")
+            if self.simulate and self.joints[idx].is_homed:
                 self.joints[idx] = goal
+            elif self.joints[idx].is_homed or True: # DANGEROUS!!!
+                self.joints[idx].go_to_position(int(goal))
             else:
-                self.joints[idx].go_to_position(goal)
+                self.get_logger().info(f"Joint {idx} is not homed")
 
     def pub_encoders(self):
         encoder_msg = Encoders()
@@ -186,6 +205,7 @@ class BrcArmMotorDriver(Node):
                     encoder_msg.encoder_count[idx] = joint
                 else:
                     encoder_msg.encoder_count[idx] = self.joints[idx].read_enc()
+        self.get_logger().info(f"Encoder message: {encoder_msg.encoder_count}")
         self.enc_pub.publish(encoder_msg)
 
     def homing(self, request: Homing.Request, response: Homing.Response):
@@ -193,12 +213,14 @@ class BrcArmMotorDriver(Node):
             (request.home_goal >> bit) & 1
             for bit in range(len(self.joints) - 1, -1, -1)
         ]
-        self.get_logger().info(f"Homing request: {bits}")
+        self.get_logger().info(f"Homing request: {list(reversed(bits))}")
         if not self.simulate:
-            for idx, bit in bits:
+            for idx, bit in enumerate(list(reversed(bits))):
                 if bit:
-                    bit = self.joints[idx].home()
-            response.home_status = sum(v << i for i, v in enumerate(bit[::-1]))
+                    bit = self.joints[idx].home_joint()
+            # TODO FIX:
+            # response.home_status = sum(v << i for i, v in enumerate(bit[::-1]))
+            response.home_status = request.home_goal
         else:
             response.home_status = request.home_goal
         return response
@@ -206,7 +228,7 @@ class BrcArmMotorDriver(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    brc_arm_motor_driver = BrcArmMotorDriver(simulate=True)
+    brc_arm_motor_driver = BrcArmMotorDriver(simulate=False)
     rclpy.spin(brc_arm_motor_driver)
     brc_arm_motor_driver.destroy_node()
     rclpy.shutdown()

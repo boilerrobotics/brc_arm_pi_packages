@@ -56,7 +56,7 @@ class RoboclawArmJoint:
             return
 
         if enc != None:
-            return float(enc)
+            return int(enc)
 
     def set_enc(self, count):
         try:
@@ -73,7 +73,7 @@ class RoboclawArmJoint:
 
     def home_joint(self):
         start_time = time.monotonic()
-        timeout = 10
+        timeout = 60
         error_code = 0
         rate = 10  # Hz
 
@@ -86,12 +86,12 @@ class RoboclawArmJoint:
                 self.roboclaw.BackwardM2(self.address, 20)
                 error_code = 0x800000
             while self.roboclaw.ReadError(self.address)[1] != error_code:
-                if start_time - time.monotonic() > timeout:
+                if time.monotonic() - start_time > timeout:
                     self.logger.warn(
                         f"Homing joint {self.name} failed, took longer than {timeout}s"
                     )
                     return self.is_homed
-                time.sleep(1 / rate)
+                # time.sleep(1 / rate)
         except OSError as e:
             self.logger.warn(f"Homing joint {self.name} error: {e.errno}")
             self.logger.debug(e)
