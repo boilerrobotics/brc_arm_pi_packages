@@ -17,6 +17,7 @@ class OdriveJoint:
                                       trajectory_limits[3],
                                       trajectory_limits[4])
     self.is_homed = False
+    self.odr.controller.config.control_mode = VELOCITY_CONTROL
   
   def go_to_position(self, position):
     try: 
