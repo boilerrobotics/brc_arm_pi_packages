@@ -18,12 +18,15 @@ class OdriveJoint:
                                       trajectory_limits[4])
     self.is_homed = False
     self.odr.controller.config.control_mode = VELOCITY_CONTROL
-  
+
   def go_to_position(self, position):
     try: 
+      k = 1 # tune PID value
+      diff = position - self.axis.encoder.pos_estimate
       self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-      self.odr.controller.config.control_mode = POSITION_CONTROL
-      self.axis.controller.input_pos = position
+      while diff != 0 :
+        self.axis.controller.input_vel = k * diff
+        diff = position - self.axis.encoder.pos_estimate
       print(
           f"Joint {self.name}:\t command sent, position = {position}"
       )
