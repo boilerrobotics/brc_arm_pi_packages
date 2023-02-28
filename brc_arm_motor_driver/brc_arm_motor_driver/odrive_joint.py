@@ -1,4 +1,6 @@
 import time
+import logging
+import threading
 import odrive
 
 class OdriveJoint:
@@ -17,20 +19,24 @@ class OdriveJoint:
                                       trajectory_limits[3],
                                       trajectory_limits[4])
     self.is_homed = False
-    self.odr.controller.config.control_mode = VELOCITY_CONTROL
+    self.desired_pos = 0
+    # self.odr.controller.config.control_mode = VELOCITY_CONTROL
+    self.thread = threading.Thread(target=self.thread_pos_controller, args=(1,), daemon=True)
+    self.thread.start()
+    
+  def threaded_pos_controller(self): 
+    while True:
+      k = 1 # tune PID value
+      self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+      self.axis.controller.input_vel = k * (self.desired_pos - self.axis.encoder.pos_estimate)
+      time.sleep(0.01)
 
   def go_to_position(self, position):
     try: 
-      k = 1 # tune PID value
-      diff = position - self.axis.encoder.pos_estimate
-      self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-      while diff != 0 :
-        self.axis.controller.input_vel = k * diff
-        diff = position - self.axis.encoder.pos_estimate
+      self.desired_pos = position
       print(
           f"Joint {self.name}:\t command sent, position = {position}"
       )
-      self.pos = position
     except Exception as e: 
       self.stop()
       print(f"Joint {self.name}: \t function: go_to_position | error: {e}")
