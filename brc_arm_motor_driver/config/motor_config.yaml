@@ -6,7 +6,9 @@
       roboclaw:
         baud: 115200
         identifiers: [128, 129, 130]
-
+    
+    #Encoder mode: 7  6            5              43210
+                  #0, reverse enc, reverse motor, 00000
     # Must be in order of homing
     joints:
       gantry:
@@ -15,44 +17,49 @@
         type: "arm"
         reduction: 1863.512284
         speed: [10000, 1000000, 10000]
-        PIDMM: [99, 2, 785, 30, 0, 0, 100000]
+        PIDMM: [1, 1, 1, 1, 0, 0, 100000]
       midarm1:
         controller: "roboclaw"
         identifier: 128
         motor_num: 1
         type: "arm"
+        encoder_mode: 0b00100000
         reduction: 5255.871815
         speed: [10000, 1000000, 10000]
-        PIDMM: [107, 3, 1080, 30, 0, 0, 100000]
+        PIDMM: [100, 0.3, 0.002, 30, 0, 0, 100000] #[56, 2, 475, 30, 0, 0, 100000]
       midarm2:
         controller: "roboclaw"
         identifier: 128
         motor_num: 2
         type: "arm"
+        encoder_mode: 0b00100000
         reduction: 5255.871815
         speed: [10000, 1000000, 10000]
-        PIDMM: [1, 1, 1, 1, 0, 0, 100000]
+        PIDMM: [100, 0.3, 0.002, 28, 0, 0, 100000] #[61, 2, 518, 28, 0, 0, 100000]
       wrist1:
         controller: "roboclaw"
         identifier: 129
         motor_num: 1
         type: "arm"
+        encoder_mode: 0b00000000
         reduction: 30273.82166
         speed: [10000, 1000000, 10000]
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
-      wrist2:
+      diff1:
         controller: "roboclaw"
         identifier: 129
         motor_num: 2
         type: "arm"
+        encoder_mode: 0b00000000
         reduction: 81.52866242
         speed: [10000, 1000000, 10000]
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
-      EEbase:
+      diff2:
         controller: "roboclaw"
         identifier: 130
         motor_num: 1
         type: "arm"
+        encoder_mode: 0b00000000
         reduction: 163.0573248
         speed: [10000, 1000000, 10000]
         PIDMM: [1, 1, 1, 1, 0, 0, 100000]
