@@ -75,7 +75,7 @@ class OdriveJoint:
       self.odr.config.gpio2_mode = GPIO_MODE_DIGITAL
       self.axis.max_endstop.config.gpio_num = 2
       self.axis.max_endstop.config.is_active_high = False
-      self.axis.max_endstop.config.offset = 1
+      self.axis.max_endstop.config.offset = 53.12
       self.axis.max_endstop.config.enabled = True
       self.odr.config.gpio2_mode = GPIO_MODE_DIGITAL_PULL_UP
       self.odr.save_configuration()
