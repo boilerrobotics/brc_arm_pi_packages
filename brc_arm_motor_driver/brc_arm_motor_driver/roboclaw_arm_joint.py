@@ -27,12 +27,12 @@ class RoboclawArmJoint:
             self.roboclaw.SetPinFunctions(self.address, 0x00, 0x62, 0x62) # DANGEROUS
             if self.motorNum == 1:
                 self.roboclaw.SetM1PositionPID(
-                    self.address, pid[1], pid[2], pid[3], pid[4], 10, 0, 100000
+                    self.address, pid[0], pid[1], pid[2], pid[3], 0, -100, 100000
                 )
                 self.roboclaw.SetM1EncoderMode(self.address, encoderMode)
             elif self.motorNum == 2:
                 self.roboclaw.SetM2PositionPID(
-                    self.address, pid[1], pid[2], pid[3], pid[4], 10, 0, 100000
+                    self.address, pid[0], pid[1], pid[2], pid[3], 0, -100, 100000
                 )
                 self.roboclaw.SetM2EncoderMode(self.address, encoderMode)
         except OSError as e:
@@ -89,15 +89,13 @@ class RoboclawArmJoint:
             elif self.motorNum == 2:
                 self.roboclaw.BackwardM2(self.address, 20)
                 error_code = 0x800000
-            while self.roboclaw.ReadError(self.address)[1] != error_code:
+            while self.roboclaw.ReadError(self.address)[1] not in (error_code, 0xC00000):
                 self.logger.info(f"{self.roboclaw.ReadError(self.address)[1]}")
                 if time.monotonic() - start_time > timeout:
                     self.logger.warn(
                         f"Homing joint {self.name} failed, took longer than {timeout}s"
                     )
                     return self.is_homed
-                # time.sleep(1 / rate)
-            self.go_to_position(50)
             self.set_enc(0)
         except OSError as e:
             self.logger.warn(f"Homing joint {self.name} error: {e.errno}")

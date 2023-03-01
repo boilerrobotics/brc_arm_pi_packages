@@ -974,13 +974,13 @@ class Roboclaw:
         return self._write4444444(
             address,
             self.Cmd.SETM2POSPID,
-            int(kd * 1024),
-            int(kp * 1024),
-            int(ki * 1024),
-            kimax,
-            deadzone,
-            min,
-            max,
+            val1=int(kd * 1024),
+            val2=int(kp * 1024),
+            val3=int(ki * 1024),
+            val4=kimax,
+            val5=deadzone,
+            val6=min,
+            val7=max,
         )
 
     def ReadM1PositionPID(self, address):
