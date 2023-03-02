@@ -14,6 +14,8 @@ class OdriveJoint:
     self.axis = getattr(odr, "axis1")
     self.is_homed = False
     self.desired_pos = 0
+    self.axis.controller.control_mode = VELOCITY_CONTROL
+    self.axis.controller.input_mode = VEL_RAMP
     self.is_alive = True
     # self.odr.controller.config.control_mode = VELOCITY_CONTROL
     self.start_thread()
