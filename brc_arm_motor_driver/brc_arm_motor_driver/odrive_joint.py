@@ -13,30 +13,14 @@ class OdriveJoint:
     self.odr = odr
     self.axis = getattr(odr, "axis1")
     self.is_homed = False
-    self.desired_pos = 0
-    self.axis.controller.control_mode = VELOCITY_CONTROL
-    self.axis.controller.input_mode = VEL_RAMP
-    self.is_alive = True
-    # self.odr.controller.config.control_mode = VELOCITY_CONTROL
-    self.start_thread()
-    
-  def start_thread(self):
-    threading.Thread(target=self.threaded_pos_controller, daemon=True).start()
-  
-  def threaded_pos_controller(self): 
-    print("running thread")
-    while self.is_alive:
-      k = 1 # tune PID value
-      self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-      self.axis.controller.input_vel = k * (self.desired_pos - self.axis.encoder.pos_estimate)
-      # print(self.axis.encoder.vel_estimate)
-      print(self.axis.encoder.pos_estimate)
-      print("input vel: ", self.axis.controller.input_vel)
-      time.sleep(0.5)
+    self.axis.controller.control_mode = POSITION_CONTROL
+    self.axis.controller.input_mode = TRAP_TRAJ
 
   def go_to_position(self, position):
     try: 
-      self.desired_pos = position
+      self.axis.controller.control_mode = POSITION_CONTROL
+      self.axis.controller.input_mode = TRAP_TRAJ 
+      self.axis.controller.input_pos = position
       print(
           f"Joint {self.name}:\t command sent, position = {position}"
       )
@@ -84,6 +68,8 @@ class OdriveJoint:
     return True
     
   def stop(self): 
+    self.axis.controller.control_mode = VELOCITY_CONTROL
+    self.axis.controller.input_mode = VEL_RAMP
     self.axis.requested_state = AXIS_STATE_IDLE
     self.axis.controller.input_vel = 0
     print(f"Joint {self.name}:\t command sent, stop")
@@ -110,8 +96,7 @@ def main():
         break
     print('Goodbye!')
   except KeyboardInterrupt as e: 
-    odr_joint.is_alive = False 
-    # odr_joint.stop()
+    odr_joint.stop()
     print("Main had a keyboard interupt: {e}") 
   except Exception as e: 
     print("Main threw an exception: {e}")
