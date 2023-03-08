@@ -1,5 +1,4 @@
 import time
-import threading
 from odrive.enums import *
 import odrive
 
@@ -8,18 +7,24 @@ class OdriveJoint:
     self,
     name,
     odr: odrive,
+    trajectory_limits
   ):
     self.name = name
     self.odr = odr
     self.axis = getattr(odr, "axis1")
     self.is_homed = False
-    self.axis.controller.control_mode = POSITION_CONTROL
-    self.axis.controller.input_mode = TRAP_TRAJ
+    self.axis.controller.control_mode = ControlMode.POSITION_CONTROL
+    self.axis.controller.input_mode = InputMode.TRAP_TRAJ
+    self.configure_trajectory_control(trajectory_limits[0], 
+                                      trajectory_limits[1], 
+                                      trajectory_limits[2], 
+                                      trajectory_limits[3],
+                                      trajectory_limits[4])
 
   def go_to_position(self, position):
     try: 
-      self.axis.controller.control_mode = POSITION_CONTROL
-      self.axis.controller.input_mode = TRAP_TRAJ 
+      self.axis.controller.control_mode = ControlMode.POSITION_CONTROL
+      self.axis.controller.input_mode = InputMode.TRAP_TRAJ 
       self.axis.controller.input_pos = position
       print(
           f"Joint {self.name}:\t command sent, position = {position}"
@@ -28,6 +33,15 @@ class OdriveJoint:
       self.stop()
       print(f"Joint {self.name}: \t function: go_to_position | error: {e}")
       print(e)
+
+  def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
+    self.axis.controller.config.input_filter_bandwidth = bandwidth
+    self.axis.controller.config.input_mode = InputMode.TRAP_TRAJ
+    self.odr.controller.config.control_mode = ControlMode.POSITION_CONTROL
+    self.axis.trap_traj.config.vel_limit = vel_limit
+    self.axis.trap_traj.config.accel_limit = accel_limit
+    self.axis.trap_traj.config.decel_limit = decel_limit
+    self.axis.controller.config.inertia = inertia
   
   def home_joint(self):
     start_time = time.monotonic()
@@ -68,21 +82,21 @@ class OdriveJoint:
     return True
     
   def stop(self): 
-    self.axis.controller.control_mode = VELOCITY_CONTROL
-    self.axis.controller.input_mode = VEL_RAMP
+    self.axis.controller.control_mode = ControlMode.VELOCITY_CONTROL
+    self.axis.controller.input_mode = InputMode.VEL_RAMP
     self.axis.requested_state = AXIS_STATE_IDLE
     self.axis.controller.input_vel = 0
     print(f"Joint {self.name}:\t command sent, stop")
     
 def main():
   print('Starting...')
-  while True:
-    odr = odrive.find_any()
-    if odr != None:
-      break
-    time.sleep(0.5)
-  try: 
-    odr_joint = OdriveJoint("odrv_arm", odr)
+  try:
+    while True:
+      odr = odrive.find_any()
+      if odr != None:
+        break
+      time.sleep(0.5) 
+    odr_joint = OdriveJoint("odrv_arm", odr, [1, 1, 1, 1, 1])
     while True:
       x = int(input("\nEnter a function:\n (0) quit\n (1) go_to_position(position)\n (2) home_joint()\n (3) stop()\n"))
       if x == 1:
@@ -97,9 +111,9 @@ def main():
     print('Goodbye!')
   except KeyboardInterrupt as e: 
     odr_joint.stop()
-    print("Main had a keyboard interupt: {e}") 
+    print(f"Main had a keyboard interupt: {e}") 
   except Exception as e: 
-    print("Main threw an exception: {e}")
+    print(f"Main threw an exception: {e}")
     
 
 if __name__ == "__main__":
