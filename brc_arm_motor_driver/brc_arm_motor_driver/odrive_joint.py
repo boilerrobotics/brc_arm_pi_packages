@@ -13,8 +13,8 @@ class OdriveJoint:
     self.odr = odr
     self.axis = getattr(odr, "axis1")
     self.is_homed = False
-    self.axis.controller.control_mode = ControlMode.POSITION_CONTROL
-    self.axis.controller.input_mode = InputMode.TRAP_TRAJ
+    self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
+    self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
     self.configure_trajectory_control(trajectory_limits[0], 
                                       trajectory_limits[1], 
                                       trajectory_limits[2], 
@@ -23,8 +23,9 @@ class OdriveJoint:
 
   def go_to_position(self, position):
     try: 
-      self.axis.controller.control_mode = ControlMode.POSITION_CONTROL
-      self.axis.controller.input_mode = InputMode.TRAP_TRAJ 
+      self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
+      self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+      self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
       self.axis.controller.input_pos = position
       print(
           f"Joint {self.name}:\t command sent, position = {position}"
@@ -36,8 +37,8 @@ class OdriveJoint:
 
   def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
     self.axis.controller.config.input_filter_bandwidth = bandwidth
-    self.axis.controller.config.input_mode = InputMode.TRAP_TRAJ
-    self.odr.controller.config.control_mode = ControlMode.POSITION_CONTROL
+    self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
+    self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
     self.axis.trap_traj.config.vel_limit = vel_limit
     self.axis.trap_traj.config.accel_limit = accel_limit
     self.axis.trap_traj.config.decel_limit = decel_limit
@@ -49,21 +50,12 @@ class OdriveJoint:
     rate = 10
     print(f"Homing joint {self.name}")
     try:
-      # configure variables for min (pin 1 on the odrive)
-      self.odr.config.gpio1_mode = GPIO_MODE_DIGITAL
-      self.axis.min_endstop.config.gpio_num = 1
-      self.axis.min_endstop.config.is_active_high = False
-      self.axis.min_endstop.config.offset = 0
-      self.axis.min_endstop.config.enabled = True
-      self.odr.config.gpio1_mode = GPIO_MODE_DIGITAL_PULL_UP
-      #configure variables for max (pin 2 on the odrive)
-      self.odr.config.gpio2_mode = GPIO_MODE_DIGITAL
-      self.axis.max_endstop.config.gpio_num = 2
-      self.axis.max_endstop.config.is_active_high = False
-      self.axis.max_endstop.config.offset = 53.12
-      self.axis.max_endstop.config.enabled = True
-      self.odr.config.gpio2_mode = GPIO_MODE_DIGITAL_PULL_UP
-      self.odr.save_configuration()
+      while True:
+        self.odr = odrive.find_any()
+        if self.odr != None:
+          break
+        time.sleep(0.5)
+      self.axis = getattr(self.odr, "axis1")
       while self.axis.current_state != AXIS_STATE_HOMING:
         self.axis.requested_state = AXIS_STATE_HOMING
         if start_time - time.monotonic() > timeout:
@@ -82,8 +74,8 @@ class OdriveJoint:
     return True
     
   def stop(self): 
-    self.axis.controller.control_mode = ControlMode.VELOCITY_CONTROL
-    self.axis.controller.input_mode = InputMode.VEL_RAMP
+    self.axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+    self.axis.controller.config.input_mode = INPUT_MODE_VEL_RAMP
     self.axis.requested_state = AXIS_STATE_IDLE
     self.axis.controller.input_vel = 0
     print(f"Joint {self.name}:\t command sent, stop")
@@ -106,6 +98,8 @@ def main():
         odr_joint.home_joint()
       elif x == 3: 
         odr_joint.stop()
+      elif x == 4:
+        print(f'Current Position: {odr_joint.axis.encoder.pos_estimate}')
       elif x == 0:
         break
     print('Goodbye!')
