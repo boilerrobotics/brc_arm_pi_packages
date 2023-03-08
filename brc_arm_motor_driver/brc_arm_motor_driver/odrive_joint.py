@@ -22,6 +22,9 @@ class OdriveJoint:
                                       trajectory_limits[4])
 
   def go_to_position(self, position):
+    if self.axis.current_state == AXIS_STATE_IDLE: 
+      print('An error was thrown that set the axis state to IDLE')
+      return
     try: 
       self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
       self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
@@ -45,29 +48,16 @@ class OdriveJoint:
     self.axis.controller.config.inertia = inertia
   
   def home_joint(self):
-    start_time = time.monotonic()
-    timeout = 10
-    rate = 10
     print(f"Homing joint {self.name}")
     try:
-      while True:
-        self.odr = odrive.find_any()
-        if self.odr != None:
-          break
+      self.axis.requested_state = AXIS_STATE_HOMING
+      while not self.axis.is_homed:
         time.sleep(0.5)
-      self.axis = getattr(self.odr, "axis1")
-      while self.axis.current_state != AXIS_STATE_HOMING:
-        self.axis.requested_state = AXIS_STATE_HOMING
-        if start_time - time.monotonic() > timeout:
-          print(
-            f"Homing joint {self.name} failed, took longer than {timeout}s"
-          )
-          return self.is_homed
-        time.sleep(1 / rate)      
     except Exception as e:
       self.stop()
       print(f"Joint {self.name}: \t function: home_joint | error: {e}")
     self.is_homed = self.axis.is_homed
+    self.odr.clear_errors()
     return self.is_homed
   
   def set_enc(self): 
@@ -90,7 +80,7 @@ def main():
       time.sleep(0.5) 
     odr_joint = OdriveJoint("odrv_arm", odr, [1, 1, 1, 1, 1])
     while True:
-      x = int(input("\nEnter a function:\n (0) quit\n (1) go_to_position(position)\n (2) home_joint()\n (3) stop()\n"))
+      x = int(input("\nEnter a function:\n (0) quit\n (1) go_to_position(position)\n (2) home_joint()\n (3) stop()\n (4) current position\n"))
       if x == 1:
         y = float(input("Enter a position\n"))
         odr_joint.go_to_position(y)
