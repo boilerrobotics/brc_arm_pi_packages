@@ -76,7 +76,8 @@ class BrcArmMotorDriver(Node):
                             roboclaw=self.controllers[roboclaw_idx][0],
                             motorNum=params["joints"][joint]["motor_num"],
                             encoderMode=params["joints"][joint]["encoder_mode"],
-                            pid=params["joints"][joint]["PIDMM"],
+                            pid_vel=params["joints"][joint]["PID_VEL"],
+                            pid_pos=params["joints"][joint]["PID_POS"],
                             speed=params["joints"][joint]["speed"],
                             logger=self.get_logger(),
                         )

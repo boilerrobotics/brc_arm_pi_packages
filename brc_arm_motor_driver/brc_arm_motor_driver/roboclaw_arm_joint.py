@@ -3,6 +3,7 @@ from rclpy.impl.rcutils_logger import RcutilsLogger
 
 from .roboclaw_3 import Roboclaw
 
+
 class RoboclawArmJoint:
     def __init__(
         self,
@@ -11,7 +12,8 @@ class RoboclawArmJoint:
         roboclaw: Roboclaw,
         motorNum,
         encoderMode,
-        pid,
+        pid_vel,
+        pid_pos,
         speed,
         logger: RcutilsLogger,
     ):
@@ -24,17 +26,38 @@ class RoboclawArmJoint:
         self.is_homed = False
 
         try:
-            self.roboclaw.SetPinFunctions(self.address, 0x00, 0x62, 0x62) # DANGEROUS
+            self.roboclaw.SetPinFunctions(self.address, 0x00, 0x62, 0x62)  # DANGEROUS
             if self.motorNum == 1:
+                self.roboclaw.SetM1VelocityPID(
+                    self.address, pid_vel[0], pid_vel[1], pid_vel[2], pid_vel[3]
+                )
                 self.roboclaw.SetM1PositionPID(
-                    self.address, pid[0], pid[1], pid[2], pid[3], 0, -100, 100000
+                    self.address,
+                    pid_pos[0],
+                    pid_pos[1],
+                    pid_pos[2],
+                    pid_pos[3],
+                    0,
+                    -100,
+                    100000,
                 )
                 self.roboclaw.SetM1EncoderMode(self.address, encoderMode)
             elif self.motorNum == 2:
+                self.roboclaw.SetM2VelocityPID(
+                    self.address, pid_vel[0], pid_vel[1], pid_vel[2], pid_vel[3]
+                )
                 self.roboclaw.SetM2PositionPID(
-                    self.address, pid[0], pid[1], pid[2], pid[3], 0, -100, 100000
+                    self.address,
+                    pid_pos[0],
+                    pid_pos[1],
+                    pid_pos[2],
+                    pid_pos[3],
+                    0,
+                    -100,
+                    100000,
                 )
                 self.roboclaw.SetM2EncoderMode(self.address, encoderMode)
+            # self.roboclaw.WriteNVM(self.address)
         except OSError as e:
             self.logger.warn(f"Joint {self.name}:\t Setup Error: OSError: {e.errno}")
             self.logger.debug(e)
@@ -69,9 +92,9 @@ class RoboclawArmJoint:
             elif self.motorNum == 2:
                 self.roboclaw.SetEncM2(self.address, count)
             self.logger.info(f"Joint {self.name} encoder set to {count}")
-        except OSError as e:
+        except Exception as e:
             self.logger.warn(
-                f"Joint {self.name}:\t error: SetEncM{self.motorNum} OSError: {e.errno}"
+                f"Joint {self.name}:\t error: SetEncM{self.motorNum} Error: {e.errno}"
             )
             self.logger.debug(e)
 
@@ -89,7 +112,10 @@ class RoboclawArmJoint:
             elif self.motorNum == 2:
                 self.roboclaw.BackwardM2(self.address, 20)
                 error_code = 0x800000
-            while self.roboclaw.ReadError(self.address)[1] not in (error_code, 0xC00000):
+            while self.roboclaw.ReadError(self.address)[1] not in (
+                error_code,
+                0xC00000,
+            ):
                 self.logger.info(f"{self.roboclaw.ReadError(self.address)[1]}")
                 if time.monotonic() - start_time > timeout:
                     self.logger.warn(
