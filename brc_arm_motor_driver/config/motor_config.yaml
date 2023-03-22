@@ -56,8 +56,8 @@
         encoder_mode: 0b00000000
         reduction: 81.52866242
         speed: [10000, 1000000, 10000]
-        PID_VEL: [8.53, 1.023, 0.0, 3000]
-        PID_POS: [7.25, 0.0, 0.0, 1, 0, 0, 100000]
+        PID_VEL: [8.0, 1.0, 0.0, 3000]
+        PID_POS: [5.0, 0.0, 0.0, 1, 0, 0, 100000]
       diff2:
         controller: "roboclaw"
         identifier: 130
@@ -66,8 +66,8 @@
         encoder_mode: 0b00000000
         reduction: 163.0573248
         speed: [10000, 1000000, 10000]
-        PID_VEL: [8.53, 1.023, 0.0, 3000]
-        PID_POS: [7.25, 0.0, 0.0, 1, 0, 0, 100000]
+        PID_VEL: [8.0, 1.0, 0.0, 3000]
+        PID_POS: [5.0, 0.0, 0.0, 1, 0, 0, 100000]
       RLink1:
         controller: "roboclaw"
         identifier: 130
