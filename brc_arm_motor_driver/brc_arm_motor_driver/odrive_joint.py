@@ -70,6 +70,7 @@ class OdriveJoint:
     return self.is_homed
   
   def read_enc(self):
+    print(self.axis.encoder.pos_estimate)
     return self.axis.encoder.pos_estimate
   
   def set_enc(self): 
