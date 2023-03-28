@@ -38,6 +38,8 @@ for p in ports:
                 address = -1
             else:
                 address = adr
+                print(version[1])
+                roboclaw.SetEncM1(adr, 0)
                 break
 
         if address == -1:
