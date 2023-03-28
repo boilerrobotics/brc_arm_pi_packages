@@ -93,16 +93,11 @@ class BrcArmMotorDriver(Node):
                         )
                     joint_num += 1
                 elif "odrive" in params["joints"][joint]["controller"]:
-                    # TODO: odrive joint stuff
-                    print("TODO ODRIVE")
                     jointType = params["joints"][joint]["type"]
                     self.get_logger().info(f"Joint {joint_num}: {jointType}: {joint}")
                     if jointType == "arm":
-                        print("TODO ODRIVE JOINT")
                         odrive = self.controllers[0][0]
-                        self.joints[joint_num] = OdriveJoint(
-                            name=joint, logger=self.get_logger()
-                        )
+                        self.joints[joint_num] = OdriveJoint("odrv_arm", odrive, [1, 1, 1, 1, 1])
                     joint_num += 1
 
         # For simulating/testing
@@ -117,8 +112,7 @@ class BrcArmMotorDriver(Node):
         # Detect odrives
         try:
             # TODO: fix odrive detection stuff
-            odr = "dummy"
-            # odr = odrive.find_any(timeout=500)
+            odr = odrive.find_any(timeout=5)
             self.get_logger().info(
                 # f"Connected to odrive: {odrive.get_serial_number_str(odr)}"
                 f"Connected to odrive: {odr}"
