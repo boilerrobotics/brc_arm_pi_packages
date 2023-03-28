@@ -41,7 +41,7 @@
       wrist1:
         controller: "roboclaw"
         identifier: 129
-        motor_num: 1
+        motor_num: 2
         type: "arm"
         encoder_mode: 0b00100000
         reduction: 30273.82166
@@ -51,7 +51,7 @@
       diff1:
         controller: "roboclaw"
         identifier: 129
-        motor_num: 2
+        motor_num: 1
         type: "arm"
         encoder_mode: 0b00000000
         reduction: 81.52866242
