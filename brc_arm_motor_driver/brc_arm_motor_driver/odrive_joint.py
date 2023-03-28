@@ -43,7 +43,7 @@ class OdriveJoint:
       print(f"Joint {self.name}: \t function: go_to_position | error: {e}")
       print(e)
 
-  def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia):
+  def configure_trajectory_control(self, bandwidth, vel_limit, accel_limit, decel_limit, inertia): # bandwidth = 10 | vel_limit = 10 | accel_limit = 5 | decel_limit = 5 | inertia = 0
     self.axis.controller.config.input_filter_bandwidth = bandwidth
     self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
     self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL

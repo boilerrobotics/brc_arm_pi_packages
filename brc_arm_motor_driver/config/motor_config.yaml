@@ -15,9 +15,7 @@
         controller: "odrive"
         motor_num: 1
         type: "arm"
-        reduction: 1863.512284
-        speed: [10000, 1000000, 10000]
-        PID_POS: [1, 1, 1, 1, 0, 0, 100000]
+        trap_traj_const: [10, 10, 5, 5, 0]
       midarm1:
         controller: "roboclaw"
         identifier: 128
