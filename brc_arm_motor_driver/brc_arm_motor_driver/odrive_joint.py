@@ -69,6 +69,9 @@ class OdriveJoint:
     self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
     return self.is_homed
   
+  def read_enc(self):
+    return self.axis.encoder.pos_estimate
+  
   def set_enc(self): 
     return True
     
