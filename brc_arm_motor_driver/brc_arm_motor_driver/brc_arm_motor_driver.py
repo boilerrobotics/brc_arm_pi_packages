@@ -97,7 +97,11 @@ class BrcArmMotorDriver(Node):
                     self.get_logger().info(f"Joint {joint_num}: {jointType}: {joint}")
                     if jointType == "arm":
                         odrive = self.controllers[0][0]
-                        self.joints[joint_num] = OdriveJoint(joint, odrive, params["joints"][joint]["trap_traj_const"])
+                        self.joints[joint_num] = OdriveJoint(
+                            name=joint, 
+                            odr=odrive, 
+                            trajectory_limits=params["joints"][joint]["trap_traj_const"],
+                            logger=self.get_logger())
                     joint_num += 1
 
         # For simulating/testing

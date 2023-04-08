@@ -2,6 +2,7 @@ import time
 from odrive.enums import *
 import odrive
 
+from rclpy.impl.rcutils_logger import RcutilsLogger
 
 class OdriveJoint:
     def __init__(self, name, odr: odrive, trajectory_limits):
