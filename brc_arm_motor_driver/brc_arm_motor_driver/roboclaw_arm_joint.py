@@ -38,7 +38,7 @@ class RoboclawArmJoint:
                     pid_pos[2],
                     pid_pos[3],
                     0,
-                    -100,
+                    -100000,
                     100000,
                 )
                 self.roboclaw.SetM1EncoderMode(self.address, encoderMode)

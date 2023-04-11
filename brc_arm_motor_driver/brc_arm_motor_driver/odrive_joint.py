@@ -5,7 +5,7 @@ import odrive
 from rclpy.impl.rcutils_logger import RcutilsLogger
 
 class OdriveJoint:
-    def __init__(self, name, odr: odrive, trajectory_limits):
+    def __init__(self, name, odr: odrive, trajectory_limits, logger):
         self.name = name
         self.odr = odr
         self.axis = getattr(odr, "axis1")
