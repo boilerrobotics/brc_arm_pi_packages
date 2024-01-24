@@ -13,7 +13,7 @@
     joints:
       gantry:
         controller: "odrive"
-        motor_num: 1
+        motor_num: 0
         type: "arm"
         trap_traj_const: [10, 10, 5, 5, 0]
       midarm1:
