@@ -2,7 +2,7 @@ import sys
 import time
 import odrive
 from odrive.enums import *
-#intentional error to stop you from running this....
+# intentional error to stop you from running this....
 class HBMotorConfig:
     """
     Class for configuring an Odrive axis for a Flipsky motor. 
@@ -255,13 +255,16 @@ class HBMotorConfig:
         self.odrv_axis.controller.input_pos = angle/360.0
 
 if __name__ == "__main__":
-    hb_motor_config = HBMotorConfig(axis_num = 0)
-    hb_motor_config.configure()
+    print("DO NOT RUN THIS FILE")
+    exit
     
-    input("CONDUCTING MOTOR TEST, press enter to start")
-    print("Placing motor in close loop control. If you move motor, motor will "
-          "resist you.")
-    hb_motor_config.mode_close_loop_control()
+    # hb_motor_config = HBMotorConfig(axis_num = 0)
+    # hb_motor_config.configure()
+    
+    # input("CONDUCTING MOTOR TEST, press enter to start")
+    # print("Placing motor in close loop control. If you move motor, motor will "
+    #       "resist you.")
+    # hb_motor_config.mode_close_loop_control()
     
     # Go from 0 to 360 degrees in increments of 30 degrees
     #for angle in range(0, 390, 30):
