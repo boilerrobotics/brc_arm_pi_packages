@@ -84,7 +84,7 @@ class HBMotorConfig:
 
         # Flipsky motors contain hall effect sensors instead of incremental 
         # encorders
-        self.odrv_axis.encoder.config.mode = ENCODER_MODE_HALL
+        self.odrv_axis.encoder.config.mode = EncoderMode.HALL
 
         # The hall feedback has 6 states for every pole pair in the motor. Since
         # we have 7 pole pairs, we set the cpr to 7*6 = 42.
@@ -108,7 +108,7 @@ class HBMotorConfig:
 
         # Set in position control mode so we can control the position of the 
         # motor
-        self.odrv_axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
+        self.odrv_axis.controller.config.control_mode = ControlMode.POSITION_CONTROL
 
         # In the next step we are going to start powering the motor and so we 
         # want to make sure that some of the above settings that require a 
@@ -133,7 +133,7 @@ class HBMotorConfig:
         print("Calibrating Odrive for  motor (you should hear a "
         "beep)...")
         
-        self.odrv_axis.requested_state = AXIS_STATE_MOTOR_CALIBRATION
+        self.odrv_axis.requested_state = AxisState.MOTOR_CALIBRATION
         
         # Wait for calibration to take place
         time.sleep(10)
@@ -235,14 +235,14 @@ class HBMotorConfig:
         Puts the motor in idle (i.e. can move freely).
         """
         
-        self.odrv_axis.requested_state = AXIS_STATE_IDLE
+        self.odrv_axis.requested_state = AxisState.IDLE
     
     def mode_close_loop_control(self):
         """
         Puts the motor in closed loop control.
         """
         
-        self.odrv_axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+        self.odrv_axis.requested_state = AxisState.CLOSED_LOOP_CONTROL
         
     def move_input_pos(self, angle):
         """
@@ -257,7 +257,7 @@ class HBMotorConfig:
 if __name__ == "__main__":
     print("DO NOT RUN THIS FILE")
     exit
-    
+
     # hb_motor_config = HBMotorConfig(axis_num = 0)
     # hb_motor_config.configure()
     
