@@ -14,18 +14,18 @@ class OdriveJoint:
         self.is_homed = False
         # self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         # self.axis.controller.config.input_mode = INPUT_MODE_PASSTHROUGH  # TRAP_TRAJ
-        self.set_to_closed_loop()
-        self.axis.controller.config.input_mode = InputMode.PASSTHROUGH
-        self.axis.controller.config.control_mode = ControlMode.POSITION_CONTROL
+        self.set_closed_loop_pos_control()
         # self.configure_trajectory_control(trajectory_limits[0],
         #                                   trajectory_limits[1],
         #                                   trajectory_limits[2],
         #                                   trajectory_limits[3],
         #                                   trajectory_limits[4])
 
-    def set_to_closed_loop(self):
+    def set_closed_loop_pos_control(self):
         self.odr.clear_errors()
         self.axis.requested_state = AxisState.CLOSED_LOOP_CONTROL
+        self.axis.controller.config.input_mode = InputMode.PASSTHROUGH
+        self.axis.controller.config.control_mode = ControlMode.POSITION_CONTROL
 
     def get_states(self):
         print("{:<26}".format("\naxis state:") + AxisState(self.axis.current_state).name.ljust(15))  
@@ -61,10 +61,8 @@ class OdriveJoint:
                         if (max_current < curr):
                             max_current = curr
                         time.sleep(0.5)
-                        if self.axis.encoder.vel_estimate == 0.0:
-                            time.sleep(2)
-                            if self.axis.encoder.vel_estimate == 0.0:
-                                break
+                        if abs(self.axis.encoder.pos_estimate - self.axis.controller.input_pos) < 0.6:
+                            break 
                 except KeyboardInterrupt:
                     None
             print(f"\nJoint {self.name}:\t command sent, input_pos = {position}")
@@ -90,9 +88,9 @@ class OdriveJoint:
         print("{:<30}".format("controller.config.pos_gain:") + str(self.axis.controller.config.pos_gain))
         x = input("Do you want to change pos_gain? (y/n)")
         if x.lower() == "y":
-            x = int(input("Input the new pos_gain: "))
+            x = float(input("Input the new pos_gain: "))
             min = 0
-            max = 100
+            max = 1000
             if x >= min and x <= max:
                 self.axis.controller.config.pos_gain = x
             else:
@@ -102,12 +100,19 @@ class OdriveJoint:
         print("{:<30}".format("controller.config.vel_gain:") + str(self.axis.controller.config.vel_gain))
         x = input("Do you want to change vel_gain? (y/n)")
         if x.lower() == "y":
-            x = int(input("Input the new vel_gain: "))
+            x = float(input("Input the new vel_gain: "))
             min = 0
             if x >= min:
                 self.axis.controller.config.vel_gain = x
             else:
                 print(f"FAILURE: new vel_gain must be greater than or equal to {min}")
+    
+    def vel_int_gain(self):
+        print("{:<30}".format("controller.config.vel_integrator_gain:") + str(self.axis.controller.config.vel_integrator_gain))
+        x = input("Do you want to change vel_integrator_gain? (y/n)")
+        if x.lower() == "y":
+            x = float(input("Input the new vel_integrator_gain: "))
+            self.axis.controller.config.vel_integrator_gain = x
 
     # odrv0.axis0.min_endstop.config.gpio_num: 1
     # odrv0.axis0.max_endstop.config.gpio_num: 2
@@ -160,8 +165,9 @@ def main():
                 input(
                     "\n------------------------------------------------------------------------------------------------\n" +
                     "Enter a function:\n (0) quit\n (1) go_to_position(position)\n (2) home_joint()\n"+
-                    " (3) stop()\n (4) current position\n (5) set state to closed_loop_control\n (6) current states\n" + 
-                    " (7) Dump and Clear Errors\n (8) read and/or set pos_gain\n (9) read and/or set vel_gain\n"
+                    " (3) stop()\n (4) current position\n (5) set state to closed loop position control\n (6) current states\n" + 
+                    " (7) Dump and Clear Errors\n (8) read and/or set pos_gain\n (9) read and/or set vel_gain\n" +
+                    " (10) read and/or set vel_integrator_gain\n"
                 )
             )
             if x == 1:
@@ -174,7 +180,7 @@ def main():
             elif x == 4:
                 print(f"Current Position: {odr_joint.axis.encoder.pos_estimate}")
             elif x == 5:
-                odr_joint.set_to_closed_loop()
+                odr_joint.set_closed_loop_pos_control()
             elif x == 6:
                 odr_joint.get_states()
             elif x == 7:
@@ -184,9 +190,12 @@ def main():
                 odr_joint.pos_gain()
             elif x == 9:
                 odr_joint.vel_gain()
+            elif x == 10:
+                odr_joint.vel_int_gain()
             elif x == 0:
+                odr_joint.odr.save_configuration()
                 break
-        print("Goodbye!")
+        print("Configuration Saved. Goodbye!")
     except KeyboardInterrupt as e:
         odr_joint.stop()
         print(f"Main had a keyboard interupt: {e}")
